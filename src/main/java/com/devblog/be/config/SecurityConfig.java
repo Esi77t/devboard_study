@@ -43,7 +43,7 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://3.35.8.210:10000",
                 "http://my-devblog-front.s3-website.ap-northeast-2.amazonaws.com",
-                "https://myaccountbook.shop"
+                "https://d3nwp35bq2qg87.cloudfront.net"
         )); 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
