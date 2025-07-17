@@ -41,8 +41,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
-                "http://d3nwp35bq2qg87.cloudfront.net",
-                "http://myaccountbook.store"
+                "https://d3nwp35bq2qg87.cloudfront.net",
+                "https://myaccountbook.store"
         )); 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
