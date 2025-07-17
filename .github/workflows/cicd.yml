@@ -49,7 +49,7 @@ jobs:
         name: devblog-deploy
     
     - name: Unzip
-      run: unzip ./devblog-deploy.zip
+      run: unzip -o ./devblog-deploy.zip
       
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
