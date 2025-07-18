@@ -26,7 +26,7 @@ jobs:
       - name: Make zip package
         run: |
           mkdir -p deploy
-          cp build/libs/*.jar deploy/
+          find build/libs/ -name "*.jar" ! -name "*-plain.jar" -exec cp {} deploy/ \;
           cp appspec.yml deploy/
           cp -r scripts/ deploy/
           cd deploy && zip -r ../deploy.zip .
