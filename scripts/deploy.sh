@@ -1,9 +1,8 @@
-#!/bin/bash
 BUILD_JAR=$(ls /home/ubuntu/*.jar)
 JAR_NAME=$(basename $BUILD_JAR)
 echo "> build 파일명: $JAR_NAME" >> /home/ubuntu/deploy.log
 
-DEPLOY_PATH="/home/ubuntu/
+DEPLOY_PATH="/home/ubuntu/"
 
 echo "> 현재 실행중인 애플리케이션 pid 확인" >> /home/ubuntu/deploy.log
 CURRENT_PID=$(pgrep -f $JAR_NAME)
@@ -16,7 +15,7 @@ else
   kill -15 $CURRENT_PID
   sleep 5
   if pgrep -f "$JAR_NAME" > /dev/null; then
-    echo "> 프로세스가 5초 내에 종료되지 않았습니다. 강제 종료 (kill -9) 시도." >> /home/ubuntu/deploy.log
+    echo "> 프로세스가 5초 내에 종료되지 않았습니다. 강제 종료 \(kill -9\) 시도." >> /home/ubuntu/deploy.log
     kill -9 $CURRENT_PID
     sleep 3
   fi
