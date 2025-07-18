@@ -35,7 +35,7 @@ jobs:
         ls -l deploy_bundle
         ls -l deploy_bundle/scripts
       shell: bash
-      
+
     - name: Make zip file
       run: |
         cd deploy_bundle
