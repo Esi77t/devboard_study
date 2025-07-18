@@ -31,11 +31,11 @@ jobs:
         mkdir -p deploy_bundle/scripts
         cp appspec.yml deploy_bundle/
         cp -r scripts/* deploy_bundle/scripts/
-        cp build/libs/*.jar deploy_bundle/
+        cp build/libs/be-0.0.1-SNAPSHOT.jar deploy_bundle/
         ls -l deploy_bundle
         ls -l deploy_bundle/scripts
       shell: bash
-
+      
     - name: Make zip file
       run: |
         cd deploy_bundle
@@ -75,3 +75,4 @@ jobs:
 
     - name: Deploy to EC2 with CodeDeploy
       run: aws deploy create-deployment --application-name devblog-codedeploy-app --deployment-group-name devblog-deployment-group --s3-location bucket=myawsdev-devaws-bucket,bundleType=zip,key=devblog-deploy.zip
+
