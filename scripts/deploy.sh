@@ -1,9 +1,28 @@
 #!/bin/bash
-JAR_NAME="be-0.0.1-SNAPSHOT.jar"
-APP_SERVICE_NAME="devblog-backend.service"
+BUILD_JAR=$(ls /home/ubuntu/*.jar)
+JAR_NAME=$(basename $BUILD_JAR)
+echo "> build 파일명: $JAR_NAME" >> /home/ubuntu/deploy.log
 
-echo "> 현재 실행중인 애플리케이션 ($APP_SERVICE_NAME) 중지" >> /home/ubuntu/deploy.log
-sudo systemctl stop $APP_SERVICE_NAME || true
+echo "> build 파일 복사" >> /home/ubuntu/deploy.log
+DEPLOY_PATH=/home/ubuntu/
+cp $BUILD_JAR $DEPLOY_PATH
+
+echo "> 현재 실행중인 애플리케이션 pid 확인" >> /home/ubuntu/deploy.log
+CURRENT_PID=$(pgrep -f $JAR_NAME)
+
+if [ -z $CURRENT_PID ]
+then
+  echo "> 현재 구동중인 애플리케이션이 없으므로 종료하지 않습니다." >> /home/ubuntu/deploy.log
+else
+  echo "> kill -15 $CURRENT_PID" >> /home/ubuntu/deploy.log
+  kill -15 $CURRENT_PID
+  sleep 5
+  if pgrep -f "$JAR_NAME" > /dev/null; then
+    echo "> 프로세스가 5초 내에 종료되지 않았습니다. 강제 종료 (kill -9) 시도." >> /home/ubuntu/deploy.log
+    kill -9 $CURRENT_PID
+    sleep 3
+  fi
+fi
 
 echo "> 새 애플리케이션 배포 및 파라미터 로드" >> /home/ubuntu/deploy.log
 
@@ -16,13 +35,13 @@ export AWS_SECRET_ACCESS_KEY=$(aws ssm get-parameter --name "/devblog/backend/aw
 export S3_BUCKET_NAME=$(aws ssm get-parameter --name "/devblog/backend/s3_bucket_name" --with-decryption --query Parameter.Value --output text)
 
 ENV_FILE="/etc/default/devblog-backend-env"
-echo "SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}" > $ENV_FILE
-echo "SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}" >> $ENV_FILE
-echo "SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}" >> $ENV_FILE
-echo "JWT_SECRET_KEY=${JWT_SECRET_KEY}" >> $ENV_FILE
-echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> $ENV_FILE
-echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> $ENV_FILE
-echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}" >> $ENV_FILE
+sudo echo "SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}" > $ENV_FILE
+sudo echo "SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}" >> $ENV_FILE
+sudo echo "SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}" >> $ENV_FILE
+sudo echo "JWT_SECRET_KEY=${JWT_SECRET_KEY}" >> $ENV_FILE
+sudo echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> $ENV_FILE
+sudo echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> $ENV_FILE
+sudo echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}" >> $ENV_FILE
 
 sudo chmod 600 $ENV_FILE
 sudo chown root:root $ENV_FILE
