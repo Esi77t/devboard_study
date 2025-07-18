@@ -1,74 +1,103 @@
-#!/bin/bash
-set -x
+set -e
 
-JAR_NAME="be-0.0.1-SNAPSHOT.jar"
-APP_SERVICE_NAME="devblog-backend.service"
+# --- 변수 설정 ---
+PROJECT_ROOT="/home/ubuntu/app"
+JAR_FILE=""
+APP_NAME="devblog"
+SERVICE_NAME="${APP_NAME}-backend.service"
+ENV_FILE="/etc/default/${APP_NAME}-backend-env"
+LOG_FILE="${PROJECT_ROOT}/deploy.log"
 
-DEPLOY_PATH="/home/ubuntu/"
+log() {
+  echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a $LOG_FILE
+}
 
-echo "> 현재 실행중인 애플리케이션 pid 확인" >> /home/ubuntu/deploy.log
-CURRENT_PID=$(pgrep -f $JAR_NAME)
-
-if [ -z $CURRENT_PID ]
-then
-  echo "> 현재 구동중인 애플리케이션이 없으므로 종료하지 않습니다." >> /home/ubuntu/deploy.log
-else
-  echo "> kill -15 $CURRENT_PID" >> /home/ubuntu/deploy.log
-  kill -15 $CURRENT_PID
-  sleep 5
-  if pgrep -f "$JAR_NAME" > /dev/null; then
-    echo "> 프로세스가 5초 내에 종료되지 않았습니다. 강제 종료 \(kill -9\) 시도." >> /home/ubuntu/deploy.log
-    kill -9 $CURRENT_PID
-    sleep 3
+stop_process() {
+  log "========== 기존 프로세스 종료 시작 =========="
+  
+  JAR_FILE=$(find $PROJECT_ROOT -maxdepth 1 -name "*.jar" | head -n 1)
+  if [ -z "$JAR_FILE" ]; then
+    log "> 실행할 JAR 파일을 찾을 수 없습니다."
+    exit 1
   fi
-fi
+  log "> 타겟 JAR 파일: $JAR_FILE"
 
-echo "> 새 애플리케이션 배포 및 파라미터 로드" >> /home/ubuntu/deploy.log
+  CURRENT_PID=$(pgrep -f "$(basename "$JAR_FILE")")
 
-export SPRING_DATASOURCE_URL=$(aws ssm get-parameter --name "/devblog/backend/db_url" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
-echo "SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}" >> /home/ubuntu/deploy.log
+  if [ -z "$CURRENT_PID" ]; then
+    log "> 현재 실행 중인 애플리케이션이 없습니다."
+  else
+    log "> 실행 중인 프로세스(PID: $CURRENT_PID) 종료"
+    kill -15 $CURRENT_PID
+    sleep 5
+  fi
+}
 
-export SPRING_DATASOURCE_USERNAME=$(aws ssm get-parameter --name "/devblog/backend/db_username" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
-echo "SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}" >> /home/ubuntu/deploy.log
+load_parameters_and_create_env() {
+  log "========== AWS SSM 파라미터 로드 및 환경 파일 생성 시작 =========="
+  
+  TEMP_ENV_FILE=$(mktemp)
 
-export SPRING_DATASOURCE_PASSWORD=$(aws ssm get-parameter --name "/devblog/backend/db_password" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
-echo "SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}" >> /home/ubuntu/deploy.log
+  PARAMS=(
+    "db_url:SPRING_DATASOURCE_URL"
+    "db_username:SPRING_DATASOURCE_USERNAME"
+    "db_password:SPRING_DATASOURCE_PASSWORD"
+    "jwt_secret_key:JWT_SECRET_KEY"
+    "aws_access_key_id:AWS_ACCESS_KEY_ID"
+    "aws_secret_access_key:AWS_SECRET_ACCESS_KEY"
+    "s3_bucket_name:S3_BUCKET_NAME"
+  )
 
-export JWT_SECRET_KEY=$(aws ssm get-parameter --name "/devblog/backend/jwt_secret_key" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
-echo "JWT_SECRET_KEY: ${JWT_SECRET_KEY}" >> /home/ubuntu/deploy.log
+  for item in "${PARAMS[@]}"; do
+    SSM_KEY="${item%%:*}"
+    ENV_VAR="${item##*:}"
+    log "> 로딩: /${APP_NAME}/backend/${SSM_KEY}"
+    VALUE=$(aws ssm get-parameter --name "/${APP_NAME}/backend/${SSM_KEY}" --with-decryption --query Parameter.Value --output text)
+    if [ -z "$VALUE" ]; then
+      log "오류: SSM에서 ${SSM_KEY} 값을 가져오지 못했습니다."
+      rm $TEMP_ENV_FILE
+      exit 1
+    fi
+    echo "${ENV_VAR}=${VALUE}" >> $TEMP_ENV_FILE
+  done
+  
+  sudo mv $TEMP_ENV_FILE $ENV_FILE
+  sudo chown root:root $ENV_FILE
+  sudo chmod 600 $ENV_FILE
+  log "> 환경 파일 생성 완료: ${ENV_FILE}"
+}
 
-export AWS_ACCESS_KEY_ID=$(aws ssm get-parameter --name "/devblog/backend/aws_access_key_id" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
-echo "AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}" >> /home/ubuntu/deploy.log
+start_and_validate() {
+  log "========== 애플리케이션 시작 및 검증 시작 =========="
+  
+  sudo systemctl daemon-reload
+  sudo systemctl start $SERVICE_NAME
+  sudo systemctl enable $SERVICE_NAME
 
-export AWS_SECRET_ACCESS_KEY=$(aws ssm get-parameter --name "/devblog/backend/aws_secret_access_key" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
-echo "AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}" >> /home/ubuntu/deploy.log
+  log "> 서비스 시작 명령 실행 완료. 15초 후 상태 확인..."
+  sleep 15
 
-export S3_BUCKET_NAME=$(aws ssm get-parameter --name "/devblog/backend/s3_bucket_name" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
-echo "S3_BUCKET_NAME: ${S3_BUCKET_NAME}" >> /home/ubuntu/deploy.log
+  STATUS=$(sudo systemctl is-active $SERVICE_NAME)
+  if [ "${STATUS}" = "active" ]; then
+    log "> 서비스가 성공적으로 시작되었습니다. (상태: ${STATUS})"
+  else
+    log "> 서비스 시작 실패. (상태: ${STATUS})"
+    log "> journalctl 로그 확인:"
+    sudo journalctl -u $SERVICE_NAME -n 50 --no-pager >> $LOG_FILE
+    exit 1
+  fi
+}
 
-ENV_FILE="/etc/default/devblog-backend-env"
-sudo sh -c "echo 'SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}' > $ENV_FILE"
-sudo sh -c "echo 'SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}' >> $ENV_FILE"
-sudo sh -c "echo 'SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}' >> $ENV_FILE"
-sudo sh -c "echo 'JWT_SECRET_KEY=${JWT_SECRET_KEY}' >> $ENV_FILE"
-sudo sh -c "echo 'AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}' >> $ENV_FILE"
-sudo sh -c "echo 'AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}' >> $ENV_FILE"
-sudo sh -c "echo 'S3_BUCKET_NAME=${S3_BUCKET_NAME}' >> $ENV_FILE"
+# --- 메인 실행 로직 ---
+log "#####################################################"
+log "############### 배포 스크립트 시작 ###############"
+log "#####################################################"
 
-sudo chmod 600 $ENV_FILE
-sudo chown root:root $ENV_FILE
+cd $PROJECT_ROOT
+stop_process
+load_parameters_and_create_env
+start_and_validate
 
-sudo systemctl daemon-reload
-
-echo "> 새로운 애플리케이션 버전으로 서비스 활성화 및 시작" >> /home/ubuntu/deploy.log
-sudo systemctl enable $APP_SERVICE_NAME
-sudo systemctl start $APP_SERVICE_NAME
-echo "> $APP_SERVICE_NAME 서비스 시작됨" >> /home/ubuntu/deploy.log
-
-sudo systemctl is-active $APP_SERVICE_NAME >> /home/ubuntu/deploy.log 2>&1
-if [ $? -eq 0 ]; then
-  echo "> $APP_SERVICE_NAME 서비스가 성공적으로 시작되었습니다." >> /home/ubuntu/deploy.log
-else
-  echo "> $APP_SERVICE_NAME 서비스 시작에 실패했습니다. 로그를 확인하세요." >> /home/ubuntu/deploy.log
-  exit 1
-fi
+log "#####################################################"
+log "############### 배포 스크립트 성공 ###############"
+log "#####################################################"

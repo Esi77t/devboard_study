@@ -2,17 +2,17 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/ubuntu/
+    destination: /home/ubuntu/app/
     overwrite: yes
 
 permissions:
-  - object: /
+  - object: /home/ubuntu/app
     pattern: "**"
     owner: ubuntu
     group: ubuntu
 
 hooks:
-  ApplicationStart:
+  AfterInstall:
     - location: scripts/deploy.sh
       timeout: 300
-      runas: ubuntu
+      runas: root
