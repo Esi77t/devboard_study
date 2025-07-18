@@ -77,7 +77,7 @@ start_and_validate() {
   log "> 서비스 시작 명령 실행 완료. 15초 후 상태 확인..."
   sleep 15
 
-  STATUS=$(sudo systemctl is-active $SERVICE_NAME)
+  STATUS=$(sudo systemctl is-active $SERVICE_NAME || true)
   if [ "${STATUS}" = "active" ]; then
     log "> 서비스가 성공적으로 시작되었습니다. (상태: ${STATUS})"
   else
