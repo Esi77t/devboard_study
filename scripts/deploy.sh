@@ -3,9 +3,7 @@ BUILD_JAR=$(ls /home/ubuntu/*.jar)
 JAR_NAME=$(basename $BUILD_JAR)
 echo "> build 파일명: $JAR_NAME" >> /home/ubuntu/deploy.log
 
-echo "> build 파일 복사" >> /home/ubuntu/deploy.log
-DEPLOY_PATH=/home/ubuntu/
-cp $BUILD_JAR $DEPLOY_PATH
+DEPLOY_PATH="/home/ubuntu/
 
 echo "> 현재 실행중인 애플리케이션 pid 확인" >> /home/ubuntu/deploy.log
 CURRENT_PID=$(pgrep -f $JAR_NAME)
@@ -35,13 +33,13 @@ export AWS_SECRET_ACCESS_KEY=$(aws ssm get-parameter --name "/devblog/backend/aw
 export S3_BUCKET_NAME=$(aws ssm get-parameter --name "/devblog/backend/s3_bucket_name" --with-decryption --query Parameter.Value --output text)
 
 ENV_FILE="/etc/default/devblog-backend-env"
-sudo echo "SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}" > $ENV_FILE
-sudo echo "SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}" >> $ENV_FILE
-sudo echo "SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}" >> $ENV_FILE
-sudo echo "JWT_SECRET_KEY=${JWT_SECRET_KEY}" >> $ENV_FILE
-sudo echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> $ENV_FILE
-sudo echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> $ENV_FILE
-sudo echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}" >> $ENV_FILE
+sudo sh -c "echo 'SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}' > $ENV_FILE"
+sudo sh -c "echo 'SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}' >> $ENV_FILE"
+sudo sh -c "echo 'SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}' >> $ENV_FILE"
+sudo sh -c "echo 'JWT_SECRET_KEY=${JWT_SECRET_KEY}' >> $ENV_FILE"
+sudo sh -c "echo 'AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}' >> $ENV_FILE"
+sudo sh -c "echo 'AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}' >> $ENV_FILE"
+sudo sh -c "echo 'S3_BUCKET_NAME=${S3_BUCKET_NAME}' >> $ENV_FILE"
 
 sudo chmod 600 $ENV_FILE
 sudo chown root:root $ENV_FILE
