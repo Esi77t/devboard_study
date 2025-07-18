@@ -1,6 +1,6 @@
-BUILD_JAR=$(ls /home/ubuntu/*.jar)
-JAR_NAME=$(basename $BUILD_JAR)
-echo "> build 파일명: $JAR_NAME" >> /home/ubuntu/deploy.log
+set -x
+
+JAR_NAME="be-0.0.1-SNAPSHOT.jar"
 
 DEPLOY_PATH="/home/ubuntu/"
 
@@ -23,13 +23,26 @@ fi
 
 echo "> 새 애플리케이션 배포 및 파라미터 로드" >> /home/ubuntu/deploy.log
 
-export SPRING_DATASOURCE_URL=$(aws ssm get-parameter --name "/devblog/backend/db_url" --with-decryption --query Parameter.Value --output text)
-export SPRING_DATASOURCE_USERNAME=$(aws ssm get-parameter --name "/devblog/backend/db_username" --with-decryption --query Parameter.Value --output text)
-export SPRING_DATASOURCE_PASSWORD=$(aws ssm get-parameter --name "/devblog/backend/db_password" --with-decryption --query Parameter.Value --output text)
-export JWT_SECRET_KEY=$(aws ssm get-parameter --name "/devblog/backend/jwt_secret_key" --with-decryption --query Parameter.Value --output text)
-export AWS_ACCESS_KEY_ID=$(aws ssm get-parameter --name "/devblog/backend/aws_access_key_id" --with-decryption --query Parameter.Value --output text)
-export AWS_SECRET_ACCESS_KEY=$(aws ssm get-parameter --name "/devblog/backend/aws_secret_access_key" --with-decryption --query Parameter.Value --output text)
-export S3_BUCKET_NAME=$(aws ssm get-parameter --name "/devblog/backend/s3_bucket_name" --with-decryption --query Parameter.Value --output text)
+export SPRING_DATASOURCE_URL=$(aws ssm get-parameter --name "/devblog/backend/db_url" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
+echo "SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}" >> /home/ubuntu/deploy.log
+
+export SPRING_DATASOURCE_USERNAME=$(aws ssm get-parameter --name "/devblog/backend/db_username" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
+echo "SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}" >> /home/ubuntu/deploy.log
+
+export SPRING_DATASOURCE_PASSWORD=$(aws ssm get-parameter --name "/devblog/backend/db_password" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
+echo "SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}" >> /home/ubuntu/deploy.log
+
+export JWT_SECRET_KEY=$(aws ssm get-parameter --name "/devblog/backend/jwt_secret_key" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
+echo "JWT_SECRET_KEY: ${JWT_SECRET_KEY}" >> /home/ubuntu/deploy.log
+
+export AWS_ACCESS_KEY_ID=$(aws ssm get-parameter --name "/devblog/backend/aws_access_key_id" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
+echo "AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}" >> /home/ubuntu/deploy.log
+
+export AWS_SECRET_ACCESS_KEY=$(aws ssm get-parameter --name "/devblog/backend/aws_secret_access_key" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
+echo "AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}" >> /home/ubuntu/deploy.log
+
+export S3_BUCKET_NAME=$(aws ssm get-parameter --name "/devblog/backend/s3_bucket_name" --with-decryption --query Parameter.Value --output text 2>>/home/ubuntu/deploy_err.log)
+echo "S3_BUCKET_NAME: ${S3_BUCKET_NAME}" >> /home/ubuntu/deploy.log
 
 ENV_FILE="/etc/default/devblog-backend-env"
 sudo sh -c "echo 'SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}' > $ENV_FILE"
