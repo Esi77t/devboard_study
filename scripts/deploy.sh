@@ -22,7 +22,7 @@ stop_process() {
   fi
   log "> 타겟 JAR 파일: $JAR_FILE"
 
-  CURRENT_PID=$(pgrep -f "$(basename "$JAR_FILE")")
+  CURRENT_PID=$(pgrep -f "$(basename "$JAR_FILE")" || true)
 
   if [ -z "$CURRENT_PID" ]; then
     log "> 현재 실행 중인 애플리케이션이 없습니다."
