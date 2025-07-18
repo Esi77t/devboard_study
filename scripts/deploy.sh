@@ -74,18 +74,23 @@ start_and_validate() {
   sudo systemctl start $SERVICE_NAME
   sudo systemctl enable $SERVICE_NAME
 
-  log "> 서비스 시작 명령 실행 완료. 15초 후 상태 확인..."
-  sleep 15
+  log "> 서비스 시작 명령 실행 완료. 최대 60초 동안 상태를 확인합니다..."
 
-  STATUS=$(sudo systemctl is-active $SERVICE_NAME || true)
-  if [ "${STATUS}" = "active" ]; then
-    log "> 서비스가 성공적으로 시작되었습니다. (상태: ${STATUS})"
-  else
-    log "> 서비스 시작 실패. (상태: ${STATUS})"
-    log "> journalctl 로그 확인:"
-    sudo journalctl -u $SERVICE_NAME -n 50 --no-pager >> $LOG_FILE
-    exit 1
-  fi
+  for i in {1..12}; do
+    STATUS=$(sudo systemctl is-active $SERVICE_NAME || true)
+    if [ "${STATUS}" = "active" ]; then
+      log "> 서비스가 성공적으로 시작되었습니다. (상태: ${STATUS})"
+      exit 0
+    fi
+    log "> 현재 상태: ${STATUS}. 5초 후 재확인..."
+    sleep 5
+  done
+
+  FINAL_STATUS=$(sudo systemctl is-active $SERVICE_NAME || true)
+  log "> 서비스 시작 실패. (최종 상태: ${FINAL_STATUS})"
+  log "> journalctl 로그 확인:"
+  sudo journalctl -u $SERVICE_NAME -n 50 --no-pager >> $LOG_FILE
+  exit 1
 }
 
 # --- 메인 실행 로직 ---
