@@ -61,6 +61,9 @@ load_parameters_and_create_env() {
     echo "${ENV_VAR}=${VALUE}" >> $TEMP_ENV_FILE
   done
   
+  log "> JAR 파일 경로 환경 변수 추가: ${JAR_FILE}"
+  echo "JAR_FILE_PATH=${JAR_FILE}" >> $TEMP_ENV_FILE
+  
   sudo mv $TEMP_ENV_FILE $ENV_FILE
   sudo chown root:root $ENV_FILE
   sudo chmod 600 $ENV_FILE
