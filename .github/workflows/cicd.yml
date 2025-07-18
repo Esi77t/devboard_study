@@ -2,7 +2,7 @@ name: DevBlog CI/CD
 
 on:
   push:
-    branches: [ "main" ] # main 브랜치에 push가 발생하면 이 워크플로우가 실행됩니다.
+    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -26,8 +26,20 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build -x test
 
+    - name: Prepare deployment bundle files
+      run: |
+        mkdir -p deploy_bundle/scripts
+        cp appspec.yml deploy_bundle/
+        cp -r scripts/* deploy_bundle/scripts/
+        cp build/libs/*.jar deploy_bundle/
+        ls -l deploy_bundle
+        ls -l deploy_bundle/scripts
+      shell: bash
+      
     - name: Make zip file
-      run: zip -r ./devblog-deploy.zip .
+      run: |
+        cd deploy_bundle
+        zip -r ../devblog-deploy.zip .
       shell: bash
       
     - name: Upload artifact
