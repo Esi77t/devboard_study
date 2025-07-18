@@ -45,7 +45,7 @@ load_parameters_and_create_env() {
     "jwt_secret_key:JWT_SECRET_KEY"
     "aws_access_key_id:AWS_ACCESS_KEY_ID"
     "aws_secret_access_key:AWS_SECRET_ACCESS_KEY"
-    "s3_bucket_name:S3_BUCKET_NAME"
+    "s3_bucket_name:CLOUD_AWS_S3_BUCKET"
   )
 
   for item in "${PARAMS[@]}"; do
