@@ -47,6 +47,7 @@ load_parameters_and_create_env() {
     "aws_secret_access_key:AWS_SECRET_ACCESS_KEY"
     "s3_bucket_name:CLOUD_AWS_S3_BUCKET"
     "server_port:SERVER_PORT"
+    "logging_level_security:LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY"
   )
 
   for item in "${PARAMS[@]}"; do
