@@ -41,7 +41,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://my-devblog-front.s3-website.ap-northeast-2.amazonaws.com",
-                "https://my-devblog-front.s3-website.ap-northeast-2.amazonaws.com"
+                "https://my-devblog-front.s3-website.ap-northeast-2.amazonaws.com",
+                "https://www.myaccountbook.store",
+                "https://myaccountbook.store"
         )); 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
