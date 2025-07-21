@@ -1,6 +1,7 @@
 package com.devblog.be.jwt;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,6 +27,13 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 	
 	private final JwtUtil jwtUtil;
 	private final UserDetailsService userDetailService;
+	
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+		String[] excluedPath = {"/"};
+		String path = request.getRequestURI();
+		return Arrays.stream(excluedPath).anyMatch(path::equals);
+	}
 	
 	// JWT 인증/인가
 	@Override
