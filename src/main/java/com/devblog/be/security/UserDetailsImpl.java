@@ -1,14 +1,14 @@
 package com.devblog.be.security;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.devblog.be.model.User;
+import com.devblog.be.model.UserRoleEnum;
 
 public class UserDetailsImpl implements UserDetails {
 	
@@ -35,7 +35,14 @@ public class UserDetailsImpl implements UserDetails {
 	
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+		UserRoleEnum role = user.getRole();
+		String authority = role.toString();
+		
+		SimpleGrantedAuthority simpleGrantedAuthority = new SimpleGrantedAuthority(authority);
+		Collection<GrantedAuthority> authorities = new ArrayList<>();
+		authorities.add(simpleGrantedAuthority);
+		
+		return authorities;
 	}
 	
 	// 계정 만료 여부

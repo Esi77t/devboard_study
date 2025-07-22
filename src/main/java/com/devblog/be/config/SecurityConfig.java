@@ -72,6 +72,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/attachments/temp").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/user/profile").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/user").authenticated()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
 				.anyRequest().authenticated()
 			);
 		

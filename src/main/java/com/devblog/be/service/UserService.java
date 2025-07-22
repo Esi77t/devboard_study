@@ -1,6 +1,7 @@
 package com.devblog.be.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -9,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.devblog.be.dto.LoginRequestDTO;
 import com.devblog.be.dto.ProfileUpdateRequestDTO;
 import com.devblog.be.dto.SignUpRequestDTO;
+import com.devblog.be.dto.UserResponseDTO;
 import com.devblog.be.model.Post;
 import com.devblog.be.model.Transaction;
 import com.devblog.be.model.User;
+import com.devblog.be.model.UserRoleEnum;
 import com.devblog.be.repository.PostRepository;
 import com.devblog.be.repository.TransactionRepository;
 import com.devblog.be.repository.UserRepository;
@@ -55,6 +58,12 @@ public class UserService {
 		user.setEmail(email);
 		user.setNickname(nickname);
 		user.setPassword(encodedPassword);
+		
+		if(username.equals("admin")) {
+			user.setRole(UserRoleEnum.ADMIN);
+		} else {
+			user.setRole(UserRoleEnum.USER);
+		}
 		
 		userRepository.save(user);
 	}
@@ -117,5 +126,12 @@ public class UserService {
 		
 		
 		userRepository.delete(user);
+	}
+	
+	// 모든 사용자 조회(관리자 권한 관련으로 만듬)
+	public List<UserResponseDTO> getAllUsers() {
+		return userRepository.findAll().stream()
+				.map(UserResponseDTO::new)
+				.collect(Collectors.toList());
 	}
 }

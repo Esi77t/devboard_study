@@ -1,5 +1,7 @@
 package com.devblog.be.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +19,7 @@ import com.devblog.be.dto.LoginRequestDTO;
 import com.devblog.be.dto.ProfileUpdateRequestDTO;
 import com.devblog.be.dto.SignUpRequestDTO;
 import com.devblog.be.dto.UserProfileDTO;
+import com.devblog.be.dto.UserResponseDTO;
 import com.devblog.be.jwt.JwtUtil;
 import com.devblog.be.model.User;
 import com.devblog.be.security.UserDetailsImpl;
@@ -108,5 +111,11 @@ public class UserController {
 		userService.deleteUser(userDetails.getUser());
 		
 		return ResponseEntity.ok("회원 탈퇴가 성공적으로 진행되었습니다.");
+	}
+	
+	@GetMapping("/admin/users")
+	public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+		List<UserResponseDTO> users = userService.getAllUsers();
+		return ResponseEntity.ok(users);
 	}
 }
