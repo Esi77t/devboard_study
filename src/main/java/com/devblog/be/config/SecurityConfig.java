@@ -40,8 +40,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://my-devblog-front.s3-website.ap-northeast-2.amazonaws.com",
-                "https://my-devblog-front.s3-website.ap-northeast-2.amazonaws.com",
+                "http://localhost:3000",
                 "https://www.myaccountbook.store",
                 "https://myaccountbook.store"
         )); 
