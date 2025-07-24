@@ -2,14 +2,21 @@ package com.devblog.be.repository;
 
 import com.devblog.be.dto.PostSearchCond;
 import com.devblog.be.model.Post;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Path;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.devblog.be.model.QPost.post;
@@ -36,10 +43,10 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 				)
 				.offset(pageable.getOffset())
 				.limit(pageable.getPageSize())
-				.orderBy(post.id.desc())
+				.orderBy(getOrderSpecifiers(pageable.getSort()))
 				.fetch();
 		
-		long total = queryFactory
+		Long total = queryFactory
 				.select(post.countDistinct())
 				.from(post)
 				.leftJoin(post.comments, comment)
@@ -50,7 +57,33 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 				)
 				.fetchOne();
 		
-		return new PageImpl<>(content, pageable, total);
+		return new PageImpl<>(content, pageable, total != null ? total : 0);
+	}
+	
+	private OrderSpecifier<?>[] getOrderSpecifiers(Sort sort) {
+	    if (sort.isEmpty()) {
+	        return new OrderSpecifier<?>[]{post.id.desc()};
+	    }
+
+	    List<OrderSpecifier<?>> orders = new ArrayList<>();
+	    for (Sort.Order order : sort) {
+	        Order direction = order.isAscending() ? Order.ASC : Order.DESC;
+
+	        PathBuilder<Object> pathBuilder = new PathBuilder<>(Post.class, "post");
+	        Path<Object> path = pathBuilder.get(order.getProperty());
+
+	        if (!Comparable.class.isAssignableFrom(path.getType())) {
+	            throw new IllegalArgumentException("정렬할 수 없는 필드입니다: " + order.getProperty());
+	        }
+
+	        @SuppressWarnings("unchecked")
+	        Expression<? extends Comparable<?>> expression =
+	                (Expression<? extends Comparable<?>>) path;
+
+	        orders.add(new OrderSpecifier<>(direction, expression));
+	    }
+
+	    return orders.toArray(new OrderSpecifier[0]);
 	}
 	
 	private BooleanExpression searchTypeEq(String searchType, String keyword) {
@@ -74,6 +107,6 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 	}
 	
 	private BooleanExpression categoryIdEq(Long categoryId) {
-        return categoryId != null ? post.category.id.eq(categoryId) : null;
+		return categoryId != null ? post.category.id.eq(categoryId) : null;
     }
 }
