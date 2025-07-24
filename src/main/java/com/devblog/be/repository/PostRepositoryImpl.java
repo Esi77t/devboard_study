@@ -28,6 +28,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 		List<Post> content = queryFactory
 				.selectFrom(post)
 				.leftJoin(post.comments, comment)
+				.distinct()
 				.where(
 					categoryIdEq(categoryId),
 					searchTypeEq(condition.getSearchType(),
@@ -35,19 +36,19 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 				)
 				.offset(pageable.getOffset())
 				.limit(pageable.getPageSize())
-//				.orderBy(post.modifiedAt.desc())
 				.orderBy(post.id.desc())
 				.fetch();
 		
 		long total = queryFactory
-				.selectFrom(post)
+				.select(post.countDistinct())
+				.from(post)
 				.leftJoin(post.comments, comment)
 				.where(
 						categoryIdEq(categoryId),
 						searchTypeEq(condition.getSearchType(), 
 						condition.getKeyword())
 				)
-				.fetchCount();
+				.fetchOne();
 		
 		return new PageImpl<>(content, pageable, total);
 	}
