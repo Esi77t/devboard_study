@@ -38,5 +38,6 @@ public class User {
 	
 	@Column(nullable=false)
 	@Enumerated(value=EnumType.STRING)
+	@Builder.Default
 	private UserRoleEnum role = UserRoleEnum.USER;
 }

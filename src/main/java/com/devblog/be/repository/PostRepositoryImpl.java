@@ -43,7 +43,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 				)
 				.offset(pageable.getOffset())
 				.limit(pageable.getPageSize())
-				.orderBy(getOrderSpecifiers(pageable.getSort()))
+				.orderBy(getOrderSpecifiers(pageable.getSort()).toArray(new OrderSpecifier[0]))
 				.fetch();
 		
 		Long total = queryFactory
@@ -60,9 +60,8 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 		return new PageImpl<>(content, pageable, total != null ? total : 0);
 	}
 	
-    private List<OrderSpecifier> getOrderSpecifiers(Sort sort) {
+	private List<OrderSpecifier> getOrderSpecifiers(Sort sort) {
         List<OrderSpecifier> orders = new ArrayList<>();
-
         if (sort.isEmpty()) {
             orders.add(post.id.desc());
             return orders;
