@@ -60,31 +60,21 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
 		return new PageImpl<>(content, pageable, total != null ? total : 0);
 	}
 	
-	private OrderSpecifier<?>[] getOrderSpecifiers(Sort sort) {
-	    if (sort.isEmpty()) {
-	        return new OrderSpecifier<?>[]{post.id.desc()};
-	    }
+    private List<OrderSpecifier> getOrderSpecifiers(Sort sort) {
+        List<OrderSpecifier> orders = new ArrayList<>();
 
-	    List<OrderSpecifier<?>> orders = new ArrayList<>();
-	    for (Sort.Order order : sort) {
-	        Order direction = order.isAscending() ? Order.ASC : Order.DESC;
+        if (sort.isEmpty()) {
+            orders.add(post.id.desc());
+            return orders;
+        }
 
-	        PathBuilder<Object> pathBuilder = new PathBuilder<>(Post.class, "post");
-	        Path<Object> path = pathBuilder.get(order.getProperty());
-
-	        if (!Comparable.class.isAssignableFrom(path.getType())) {
-	            throw new IllegalArgumentException("정렬할 수 없는 필드입니다: " + order.getProperty());
-	        }
-
-	        @SuppressWarnings("unchecked")
-	        Expression<? extends Comparable<?>> expression =
-	                (Expression<? extends Comparable<?>>) path;
-
-	        orders.add(new OrderSpecifier<>(direction, expression));
-	    }
-
-	    return orders.toArray(new OrderSpecifier[0]);
-	}
+        for (Sort.Order order : sort) {
+            Order direction = order.isAscending() ? Order.ASC : Order.DESC;
+            PathBuilder<Post> pathBuilder = new PathBuilder<>(Post.class, "post");
+            orders.add(new OrderSpecifier(direction, pathBuilder.get(order.getProperty())));
+        }
+        return orders;
+    }
 	
 	private BooleanExpression searchTypeEq(String searchType, String keyword) {
 		if(!StringUtils.hasText(keyword)) {
